@@ -1,11 +1,11 @@
-%_javapackages_macros
+%{?_javapackages_macros:%_javapackages_macros}
 %global base_name woodstox
 %global core_name %{base_name}-core
 %global stax2_ver  3.1.1
 
 Name:           %{core_name}
 Version:        4.2.0
-Release:        2.0%{?dist}
+Release:        2.1%{?dist}
 Summary:        High-performance XML processor
 License:        ASL 2.0 or LGPLv2+ or BSD
 URL:            http://%{base_name}.codehaus.org/
