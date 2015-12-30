@@ -5,8 +5,9 @@
 
 Name:           %{core_name}
 Version:        4.2.0
-Release:        2.1%{?dist}
+Release:        2.2
 Summary:        High-performance XML processor
+Group:		Development/Java
 License:        ASL 2.0 or LGPLv2+ or BSD
 URL:            http://%{base_name}.codehaus.org/
 BuildArch:      noarch
@@ -22,7 +23,7 @@ BuildRequires:  mvn(org.apache.felix:org.osgi.core)
 BuildRequires:  mvn(org.codehaus.woodstox:stax2-api)
 # Transitive devel dependencies needed because some packages don't
 # install effective POMs:
-BuildRequires:  mvn(net.java:jvnet-parent)
+BuildRequires:  mvn(net.java:jvnet-parent:pom:)
 
 %description
 Woodstox is a high-performance validating namespace-aware StAX-compliant
