@@ -1,29 +1,29 @@
 %{?_javapackages_macros:%_javapackages_macros}
+
 %global base_name woodstox
 %global core_name %{base_name}-core
-%global stax2_ver  3.1.1
 
 Name:           %{core_name}
-Version:        4.2.0
-Release:        2.2
+Version:        5.0.3
+Release:        2%{?dist}
 Summary:        High-performance XML processor
-Group:		Development/Java
 License:        ASL 2.0 or LGPLv2+ or BSD
-URL:            http://%{base_name}.codehaus.org/
+URL:            https://github.com/FasterXML/woodstox
 BuildArch:      noarch
 
-Source0:        http://%{base_name}.codehaus.org/%{version}/%{core_name}-src-%{version}.tar.gz
-Patch0:         %{name}-stax2-api.patch
+Source0:        https://github.com/FasterXML/%{base_name}/archive/%{name}-%{version}.tar.gz
+Patch0:         0001-stax2-api.patch
 
 BuildRequires:  maven-local
+BuildRequires:  mvn(com.fasterxml:oss-parent:pom:)
 BuildRequires:  mvn(javax.xml.stream:stax-api)
+BuildRequires:  mvn(junit:junit)
 BuildRequires:  mvn(net.java.dev.msv:msv-core)
+BuildRequires:  mvn(net.java.dev.msv:msv-rngconverter)
 BuildRequires:  mvn(net.java.dev.msv:xsdlib)
+BuildRequires:  mvn(org.apache.felix:maven-bundle-plugin)
 BuildRequires:  mvn(org.apache.felix:org.osgi.core)
 BuildRequires:  mvn(org.codehaus.woodstox:stax2-api)
-# Transitive devel dependencies needed because some packages don't
-# install effective POMs:
-BuildRequires:  mvn(net.java:jvnet-parent:pom:)
 
 %description
 Woodstox is a high-performance validating namespace-aware StAX-compliant
@@ -39,52 +39,73 @@ Summary:          API documentation for %{name}
 This package contains the API documentation for %{name}.
 
 %prep
-%setup -q -n %{base_name}-%{version}
-%patch0
+%setup -q -n %{base_name}-%{name}-%{version}
 
-# Create POM from template
-sed s/@VERSION@/%{version}/\;s/@REQ_STAX2_VERSION@/%{stax2_ver}/ \
-    src/maven/%{name}-asl.pom >pom.xml
+%patch0 -p1
 
-# Remove bundled libraries.
-rm -rf lib
-rm -rf src/maven
-rm -rf src/resources
-rm -rf src/samples
-rm -rf src/java/org
-rm -rf src/test/org
-rm -rf src/test/stax2
+%pom_xpath_inject 'pom:plugin[pom:artifactId="maven-bundle-plugin"]/pom:configuration' '
+<instructions>
+    <Export-Package>{local-packages}</Export-Package>
+</instructions>'
 
-# Bundled libraries were removed, so dependencies on them need to be
-# added.
-%pom_add_dep net.java.dev.msv:msv-core
-%pom_add_dep org.apache.felix:org.osgi.core
-%pom_add_dep net.java.dev.msv:xsdlib
-
-# Upstream uses non-standard directory structure.
-%pom_xpath_inject pom:project "
-    <build>
-      <sourceDirectory>src/java</sourceDirectory>
-      <testSourceDirectory>src/test</testSourceDirectory>
-    </build>"
-
-%mvn_alias ":{woodstox-core}-asl" :@1-lgpl
+%mvn_alias ":{woodstox-core}" :@1-lgpl :@1-asl :wstx-asl :wstx-lgpl \
+    org.codehaus.woodstox:@1 org.codehaus.woodstox:@1-asl \
+    org.codehaus.woodstox:@1-lgpl org.codehaus.woodstox:wstx-lgpl \
+    org.codehaus.woodstox:wstx-asl
 %mvn_file : %{name}{,-asl,-lgpl}
 
+# Fails even when using online maven build
+rm ./src/test/java/org/codehaus/stax/test/stream/TestNamespaces.java
+
 %build
-# stax2 missing -> cannot compile tests -> tests skipped
-%mvn_build -f
+%mvn_build
 
 %install
 %mvn_install
 
 %files -f .mfiles
-%doc release-notes
+%doc README.md
 
 %files javadoc -f .mfiles-javadoc
-%doc release-notes/asl release-notes/lgpl release-notes/bsd
 
 %changelog
+* Sat Feb 11 2017 Fedora Release Engineering <releng@fedoraproject.org> - 5.0.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Tue Sep 20 2016 Michael Simacek <msimacek@redhat.com> - 5.0.3-1
+- Update to upstream version 5.0.3
+
+* Mon Jul 04 2016 Michael Simacek <msimacek@redhat.com> - 5.0.2-1
+- Update to upstream version 5.0.2
+
+* Fri Feb 05 2016 Fedora Release Engineering <releng@fedoraproject.org> - 5.0.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Mon Sep 28 2015 Mikolaj Izdebski <mizdebsk@redhat.com> - 5.0.1-1
+- Update to upstream version 5.0.1
+
+* Fri Jun 19 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 5.0.0-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Mon Mar 23 2015 Michael Simacek <msimacek@redhat.com> - 5.0.0-2
+- Fix missing classes and aliases
+- Enable tests
+
+* Mon Mar 23 2015 Michael Simacek <msimacek@redhat.com> - 5.0.0-1
+- Update to upstream version 5.0.0
+
+* Mon Aug  4 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 4.2.0-6
+- Remove build-requires on jvnet-parent
+
+* Sun Jun 08 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.2.0-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Fri Jan 24 2014 Michal Srb <msrb@redhat.com> - 4.2.0-4
+- Add aliases: ":wstx-asl" ":wstx-lgpl"
+
+* Thu Oct  3 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 4.2.0-3
+- Fix usage of %%mvn_alias
+
 * Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.2.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
